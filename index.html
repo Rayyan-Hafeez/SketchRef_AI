@@ -1,0 +1,1797 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SketchRef AI – Studio Reference & Camera Lucida Mirror</title>
+
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%233b82f6' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m9.06 11.9 8.07-8.06a2.85 2.85 0 1 1 4.03 4.03l-8.06 8.08'/%3E%3Cpath d='M7.07 14.94c-1.66 0-3 1.35-3 3.02 0 1.33-2.5 1.52-2 2.02 1.08 1.1 2.49 2.02 4 2.02 2.2 0 4-1.8 4-4.04a3.01 3.01 0 0 0-3-3.02z'/%3E%3C/svg%3E">
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- QRCode.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            studio: {
+              950: '#090d16',
+              900: '#0f172a',
+              850: '#141e33',
+              800: '#1e293b',
+              700: '#334155',
+              600: '#475569'
+            },
+            pinterest: {
+              DEFAULT: '#e60023',
+              hover: '#ad081b'
+            }
+          }
+        }
+      }
+    };
+  </script>
+
+  <style>
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #0f172a; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+    .masonry-grid { column-count: 1; column-gap: 1.25rem; }
+    @media (min-width: 640px) { .masonry-grid { column-count: 2; } }
+    @media (min-width: 1024px) { .masonry-grid { column-count: 3; } }
+    @media (min-width: 1280px) { .masonry-grid { column-count: 4; } }
+
+    .masonry-item { break-inside: avoid; margin-bottom: 1.25rem; }
+
+    .paper-texture {
+      background-color: #fbf9f4;
+      background-image: 
+        radial-gradient(#d3cbbd 0.75px, transparent 0.75px),
+        radial-gradient(#d3cbbd 0.75px, #fbf9f4 0.75px);
+      background-size: 28px 28px;
+      background-position: 0 0, 14px 14px;
+    }
+
+    .fade-in { animation: fadeIn 0.25s ease-out forwards; }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .keystone-pin, .sight-pin {
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      border-radius: 9999px;
+      border: 3px solid #ffffff;
+      cursor: crosshair;
+      transform: translate(-50%, -50%);
+      z-index: 45;
+      touch-action: none;
+    }
+    .keystone-pin { background-color: #3b82f6; box-shadow: 0 0 10px rgba(59, 130, 246, 0.8); }
+    .sight-pin { background-color: #10b981; box-shadow: 0 0 10px rgba(16, 185, 129, 0.8); }
+  </style>
+</head>
+
+<body class="bg-studio-950 text-slate-100 min-h-screen flex flex-col font-sans antialiased select-none">
+
+  <!-- Drag & Drop Dropzone Overlay -->
+  <div id="drop-overlay" class="fixed inset-0 z-50 bg-blue-600/20 backdrop-blur-md border-4 border-dashed border-blue-500 hidden flex flex-col items-center justify-center pointer-events-none transition-all duration-200">
+    <div class="p-8 rounded-3xl bg-studio-900 border border-blue-500 shadow-2xl flex flex-col items-center space-y-3">
+      <i data-lucide="upload-cloud" class="w-16 h-16 text-blue-400 animate-bounce"></i>
+      <h3 class="text-xl font-extrabold text-white">Drop to Ingest Reference</h3>
+      <p class="text-xs text-slate-300">File is processed locally and added to your session shelf</p>
+    </div>
+  </div>
+
+  <!-- Top Navigation Bar -->
+  <header class="sticky top-0 z-40 bg-studio-900/90 backdrop-blur-md border-b border-studio-800">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
+      
+      <div class="flex items-center space-x-3 cursor-pointer" onclick="switchSection('web')">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center shadow-lg shadow-blue-500/20">
+          <i data-lucide="brush" class="w-5 h-5 text-white"></i>
+        </div>
+        <div>
+          <span class="text-lg font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-indigo-300">
+            SketchRef AI
+          </span>
+          <span class="hidden sm:inline-block ml-2 text-xs px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20 font-medium">Studio Suite</span>
+        </div>
+      </div>
+
+      <!-- Navigation Switcher -->
+      <nav class="flex items-center bg-studio-950/80 p-1 rounded-xl border border-studio-800 text-xs font-semibold">
+        <button id="nav-btn-web" onclick="switchSection('web')" class="flex items-center space-x-1.5 px-3.5 py-1.5 rounded-lg bg-blue-600 text-white transition-all">
+          <i data-lucide="globe" class="w-3.5 h-3.5"></i>
+          <span>Web Engine</span>
+        </button>
+        <button id="nav-btn-pinterest" onclick="switchSection('pinterest')" class="flex items-center space-x-1.5 px-3.5 py-1.5 rounded-lg text-slate-400 hover:text-white transition-all">
+          <i data-lucide="pin" class="w-3.5 h-3.5 text-pinterest"></i>
+          <span>Pinterest Board</span>
+        </button>
+        <button id="nav-btn-ai" onclick="switchSection('ai')" class="flex items-center space-x-1.5 px-3.5 py-1.5 rounded-lg text-slate-400 hover:text-white transition-all">
+          <i data-lucide="wand-2" class="w-3.5 h-3.5 text-amber-400"></i>
+          <span>AI Studio</span>
+        </button>
+      </nav>
+
+      <!-- Action Utilities -->
+      <div class="flex items-center space-x-2">
+        <label class="px-2.5 py-1.5 rounded-xl bg-studio-800 hover:bg-studio-700 text-slate-300 border border-studio-700 text-xs font-semibold flex items-center space-x-1.5 cursor-pointer transition active:scale-95" title="Import Local Images">
+          <i data-lucide="hard-drive" class="w-3.5 h-3.5 text-blue-400"></i>
+          <span class="hidden md:inline">Import</span>
+          <input type="file" id="local-file-input" accept="image/*" multiple class="hidden" onchange="handleFileInput(event)" />
+        </label>
+
+        <button onclick="togglePinboardDrawer()" class="px-3 py-1.5 rounded-xl bg-studio-800 hover:bg-studio-700 text-slate-200 border border-studio-700 text-xs font-semibold flex items-center space-x-1.5 transition">
+          <i data-lucide="bookmark" class="w-4 h-4 text-amber-400"></i>
+          <span class="hidden sm:inline">Pinned</span>
+          <span id="pin-badge" class="ml-1 px-1.5 py-0.2 rounded-full bg-amber-500/20 text-amber-300 text-[10px] font-bold">0</span>
+        </button>
+
+        <button onclick="launchTracingStudioDirect(activeRefId)" class="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-semibold flex items-center space-x-1.5 shadow-md shadow-blue-600/20 transition-all">
+          <i data-lucide="camera" class="w-4 h-4"></i>
+          <span>Web Tracer</span>
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- 1. WEB ENGINE SECTION -->
+  <section id="section-web" class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-8">
+    <div class="max-w-3xl mx-auto text-center space-y-4 mb-8">
+      <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight text-white">
+        Find References by <span class="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-indigo-300 to-amber-300">Anatomy, Lighting & Mood</span>
+      </h1>
+      <p class="text-sm sm:text-base text-slate-400">
+        Search visual references globally, import desktop files, or drag images directly onto this window.
+      </p>
+
+      <form id="search-form" class="relative mt-4 flex items-center shadow-2xl">
+        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
+          <i data-lucide="sparkles" class="w-5 h-5 text-blue-400"></i>
+        </div>
+        <input
+          id="search-input"
+          type="text"
+          class="w-full pl-12 pr-28 py-3.5 bg-studio-900 border border-studio-700 rounded-2xl text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-sm sm:text-base"
+          placeholder="e.g. dramatic rim light knight low angle, skull sketch..."
+          value="batman sketch"
+        />
+        <button
+          type="submit"
+          class="absolute right-2 px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs sm:text-sm transition-colors shadow-md shadow-blue-600/30 flex items-center space-x-1.5"
+        >
+          <i data-lucide="search" class="w-4 h-4"></i>
+          <span>Search</span>
+        </button>
+      </form>
+
+      <div class="flex flex-wrap items-center justify-center gap-2 pt-2">
+        <span class="text-xs text-slate-500 font-medium mr-1">Presets:</span>
+        <button onclick="triggerQuickSearch('dramatic rim light knight low angle')" class="text-xs px-3 py-1 rounded-lg bg-studio-850 hover:bg-studio-800 text-slate-300 border border-studio-700 transition-colors">Knight Rim Light</button>
+        <button onclick="triggerQuickSearch('skull anatomy sketch drawing')" class="text-xs px-3 py-1 rounded-lg bg-studio-850 hover:bg-studio-800 text-slate-300 border border-studio-700 transition-colors">Skull Anatomy</button>
+        <button onclick="triggerQuickSearch('classical drapery cloth folds study')" class="text-xs px-3 py-1 rounded-lg bg-studio-850 hover:bg-studio-800 text-slate-300 border border-studio-700 transition-colors">Marble Drapery</button>
+        <button onclick="triggerQuickSearch('male torso contrapposto statue sculpture')" class="text-xs px-3 py-1 rounded-lg bg-studio-850 hover:bg-studio-800 text-slate-300 border border-studio-700 transition-colors">Torso Contrapposto</button>
+      </div>
+
+      <div id="parser-container" class="mt-4 p-3.5 rounded-xl bg-studio-900/60 border border-studio-800 text-left">
+        <div class="flex items-center space-x-2 text-xs font-semibold text-blue-400 mb-2">
+          <i data-lucide="cpu" class="w-4 h-4"></i>
+          <span>AI PARSED QUALITIES:</span>
+        </div>
+        <div class="flex flex-wrap gap-2" id="parser-tags"></div>
+      </div>
+    </div>
+
+    <div class="flex items-center justify-between pb-4 border-b border-studio-800 mb-6">
+      <span id="results-count" class="text-xs text-slate-400 font-medium">Searching visual archives...</span>
+      <span class="text-xs text-slate-500 flex items-center space-x-1">
+        <i data-lucide="bookmark" class="w-3.5 h-3.5 text-amber-400"></i>
+        <span>Pin references to build a multi-image swap dock</span>
+      </span>
+    </div>
+
+    <div id="reference-grid" class="masonry-grid"></div>
+  </section>
+
+  <!-- 2. PINTEREST ART REFERENCE SECTION -->
+  <section id="section-pinterest" class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-8 hidden">
+    <div class="max-w-3xl mx-auto text-center space-y-4 mb-8">
+      <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-pinterest/10 border border-pinterest/20 text-pinterest text-xs font-semibold">
+        <i data-lucide="pin" class="w-3.5 h-3.5"></i>
+        <span>Pinterest Art Discovery</span>
+      </div>
+      <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight text-white">
+        Search & Study <span class="text-pinterest">Pinterest Boards</span>
+      </h1>
+      <p class="text-sm sm:text-base text-slate-400">
+        Explore visual reference pins, character model sheets, and study boards without localized proxy issues.
+      </p>
+
+      <form id="pinterest-form" class="relative mt-4 flex items-center shadow-2xl">
+        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
+          <i data-lucide="pin" class="w-5 h-5 text-pinterest"></i>
+        </div>
+        <input
+          id="pinterest-input"
+          type="text"
+          class="w-full pl-12 pr-28 py-3.5 bg-studio-900 border border-studio-700 rounded-2xl text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-pinterest focus:border-transparent transition-all text-sm sm:text-base"
+          placeholder="Search Pinterest (e.g. fabric folds, half moon, character pose)..."
+          value="half moon drawing aesthetic"
+        />
+        <button
+          type="submit"
+          class="absolute right-2 px-5 py-2 rounded-xl bg-pinterest hover:bg-pinterest-hover text-white font-semibold text-xs sm:text-sm transition-colors shadow-md shadow-pinterest/30 flex items-center space-x-1.5"
+        >
+          <i data-lucide="search" class="w-4 h-4"></i>
+          <span>Find Pins</span>
+        </button>
+      </form>
+    </div>
+
+    <div class="flex items-center justify-between pb-4 border-b border-studio-800 mb-6">
+      <span id="pinterest-results-count" class="text-xs text-slate-400 font-medium">Ready to explore Pinterest boards</span>
+    </div>
+
+    <div id="pinterest-grid" class="masonry-grid"></div>
+  </section>
+
+  <!-- 3. AI IMAGE GENERATION STUDIO -->
+  <section id="section-ai" class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-8 hidden">
+    <div class="max-w-3xl mx-auto text-center space-y-4 mb-8">
+      <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs font-semibold">
+        <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+        <span>AI Art Reference Generator</span>
+      </div>
+      <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight text-white">
+        Generate <span class="bg-clip-text text-transparent bg-gradient-to-r from-amber-400 via-orange-300 to-amber-200">Custom References</span>
+      </h1>
+      <p class="text-sm sm:text-base text-slate-400">Describe the lighting, anatomy, or style. The system creates a clean reference on demand.</p>
+
+      <div class="bg-studio-900 border border-studio-700 rounded-3xl p-5 shadow-2xl text-left space-y-4 mt-6">
+        <div>
+          <label class="text-xs font-semibold text-slate-300 block mb-1.5">Reference Subject & Pose</label>
+          <textarea
+            id="ai-prompt-input"
+            rows="3"
+            class="w-full p-3.5 bg-studio-950 border border-studio-700 rounded-xl text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent text-sm resize-none"
+            placeholder="e.g. Anatomical planar head study of an elderly warrior, harsh side lighting..."
+          >Anatomical planar head study of an elderly warrior, harsh side lighting, caravaggio chiaroscuro, charcoal sketch style</textarea>
+        </div>
+
+        <div>
+          <label class="text-xs font-semibold text-slate-300 block mb-1.5">Artistic Style Modifier</label>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+            <button onclick="selectAiStyle(this, 'classical charcoal sketch')" class="ai-style-pill py-2 px-3 rounded-lg bg-amber-500/20 border border-amber-400 text-amber-200 font-semibold text-left">Charcoal Sketch</button>
+            <button onclick="selectAiStyle(this, 'cinematic studio photography rim lighting')" class="ai-style-pill py-2 px-3 rounded-lg bg-studio-800 border border-studio-700 text-slate-300 text-left hover:text-white">Cinematic Lighting</button>
+            <button onclick="selectAiStyle(this, 'anatomical statue contrapposto marble sculpture')" class="ai-style-pill py-2 px-3 rounded-lg bg-studio-800 border border-studio-700 text-slate-300 text-left hover:text-white">Marble Sculpture</button>
+            <button onclick="selectAiStyle(this, 'da vinci master pen and ink drawing')" class="ai-style-pill py-2 px-3 rounded-lg bg-studio-800 border border-studio-700 text-slate-300 text-left hover:text-white">Ink Drawing</button>
+          </div>
+        </div>
+
+        <button onclick="generateAiReference()" id="btn-generate-ai" class="w-full py-3.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-bold text-sm transition-all shadow-lg shadow-amber-500/20 flex items-center justify-center space-x-2">
+          <i data-lucide="wand-2" class="w-4 h-4"></i>
+          <span id="ai-generate-text">Generate Reference</span>
+        </button>
+      </div>
+    </div>
+
+    <div id="ai-output-container" class="max-w-2xl mx-auto hidden fade-in">
+      <div class="bg-studio-900 border border-studio-700 rounded-3xl overflow-hidden shadow-2xl">
+        <div class="relative bg-black flex items-center justify-center min-h-[400px]">
+          <img id="ai-result-image" src="" alt="AI Generated Reference" class="max-h-[600px] w-auto object-contain" />
+          <div id="ai-loading-spinner" class="absolute inset-0 bg-black/75 flex flex-col items-center justify-center space-y-3 hidden">
+            <span class="w-8 h-8 rounded-full border-4 border-amber-400 border-t-transparent animate-spin"></span>
+            <p class="text-xs text-amber-300 font-semibold tracking-wide">Synthesizing Artist Reference...</p>
+          </div>
+        </div>
+        <div class="p-5 flex items-center justify-between bg-studio-850">
+          <div>
+            <h3 id="ai-result-title" class="text-sm font-bold text-white">AI Reference Study</h3>
+            <p id="ai-result-meta" class="text-xs text-slate-400">Classical Sketch • 768x1024</p>
+          </div>
+          <div class="flex items-center space-x-2">
+            <button onclick="pinReference(activeReferences.find(r => r.id === currentAiRefId))" class="px-3 py-1.5 rounded-xl bg-studio-800 hover:bg-studio-700 text-amber-300 border border-studio-700 text-xs font-semibold flex items-center space-x-1">
+              <i data-lucide="bookmark" class="w-3.5 h-3.5"></i>
+              <span>Pin</span>
+            </button>
+            <button onclick="launchTracingStudioDirect(currentAiRefId)" class="px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold flex items-center space-x-1.5 shadow">
+              <i data-lucide="smartphone" class="w-3.5 h-3.5"></i>
+              <span>Beam to Phone Tracer</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PINBOARD DRAWER -->
+  <div id="pinboard-drawer" class="fixed inset-y-0 right-0 z-50 w-80 bg-studio-900 border-l border-studio-800 p-5 shadow-2xl flex flex-col transform translate-x-full transition-transform duration-300">
+    <div class="flex items-center justify-between pb-4 border-b border-studio-800">
+      <div class="flex items-center space-x-2 text-white font-bold text-sm">
+        <i data-lucide="bookmark" class="w-4 h-4 text-amber-400"></i>
+        <span>Pinned References</span>
+      </div>
+      <button onclick="togglePinboardDrawer()" class="p-1 rounded-lg text-slate-400 hover:text-white">
+        <i data-lucide="x" class="w-4 h-4"></i>
+      </button>
+    </div>
+
+    <div id="pinboard-items" class="flex-1 overflow-y-auto py-4 space-y-3"></div>
+
+    <div class="pt-3 border-t border-studio-800 flex justify-between">
+      <button onclick="clearPinboard()" class="text-xs text-rose-400 hover:text-rose-300">Clear All</button>
+      <button onclick="launchTracingStudioDirect(pinnedItems[0]?.id)" class="text-xs px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-semibold">Trace Pinned</button>
+    </div>
+  </div>
+
+  <!-- INSPECTOR STUDY ROOM -->
+  <div id="inspector-modal" class="fixed inset-0 z-50 hidden bg-black/85 backdrop-blur-md flex items-center justify-center p-2 sm:p-6">
+    <div class="bg-studio-900 border border-studio-800 rounded-2xl w-full max-w-5xl h-[92vh] flex flex-col shadow-2xl overflow-hidden">
+      
+      <div class="px-5 py-3.5 border-b border-studio-800 flex items-center justify-between bg-studio-850/60">
+        <div>
+          <h3 id="inspector-title" class="text-sm font-bold text-white">Reference Study</h3>
+          <p id="inspector-meta" class="text-xs text-slate-400"></p>
+        </div>
+        <div class="flex items-center space-x-2">
+          <button onclick="launchTracingStudioDirect(activeRefId)" class="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold flex items-center space-x-1.5 shadow transition">
+            <i data-lucide="smartphone" class="w-4 h-4"></i>
+            <span>Beam to Phone & Trace</span>
+          </button>
+          <button onclick="closeInspector()" class="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-studio-800">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+      </div>
+
+      <div class="flex-1 flex flex-col md:flex-row overflow-hidden bg-studio-950">
+        
+        <div class="flex-1 relative flex items-center justify-center p-4 overflow-hidden bg-neutral-950" id="inspector-canvas-wrapper">
+          <canvas id="study-canvas" class="max-h-full max-w-full rounded shadow-lg object-contain cursor-crosshair"></canvas>
+          <canvas id="grid-canvas" class="absolute inset-0 pointer-events-none w-full h-full"></canvas>
+
+          <!-- Floating Bargue Sampler Badge -->
+          <div id="graphite-probe-badge" class="absolute pointer-events-none hidden bg-studio-900/95 border border-studio-700 text-white px-3 py-1.5 rounded-xl shadow-2xl z-30 flex items-center space-x-2.5">
+            <div id="probe-color-preview" class="w-4 h-4 rounded-full border border-white/40"></div>
+            <div>
+              <div class="text-[10px] text-slate-400 flex items-center gap-1 font-mono">
+                <span>Lum:</span><span id="probe-lum-val" class="text-white font-bold">128</span>
+              </div>
+              <div class="text-xs font-extrabold text-blue-400 font-mono tracking-wide" id="probe-grade-val">HB Pencil</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="w-full md:w-80 border-t md:border-t-0 md:border-l border-studio-800 bg-studio-900 p-5 overflow-y-auto space-y-6">
+          
+          <!-- FEATURE 3: 3D VIRTUAL RELIGHTING ORB -->
+          <div class="border border-amber-500/20 bg-amber-500/5 p-3 rounded-xl space-y-2">
+            <div class="flex items-center justify-between">
+              <label class="text-xs font-bold text-amber-300 flex items-center gap-1.5">
+                <i data-lucide="sun" class="w-3.5 h-3.5"></i>
+                <span>3D Virtual Relighting</span>
+              </label>
+              <input type="checkbox" id="relight-toggle" onchange="toggleRelightingMode()" class="rounded bg-studio-800 border-studio-700 text-amber-500 w-4 h-4 cursor-pointer" />
+            </div>
+            <p class="text-[11px] text-slate-400">Drag the orb to recalculate shadow vectors and change light direction on 2D planes.</p>
+            <div id="relight-controls" class="hidden flex items-center justify-center py-2">
+              <div id="light-orb-pad" class="w-24 h-24 rounded-full border border-slate-700 bg-studio-950 relative flex items-center justify-center cursor-crosshair shadow-inner">
+                <div id="light-orb-handle" class="w-5 h-5 rounded-full bg-amber-400 shadow-md shadow-amber-400/80 absolute transform -translate-x-1/2 -translate-y-1/2" style="left: 70%; top: 30%;"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- FEATURE 5: BILATERAL TEXTURE PURGE (EDGE-PRESERVING SIMPLIFIER) -->
+          <div>
+            <div class="flex items-center justify-between mb-1.5">
+              <label class="text-xs font-semibold text-slate-300">Texture Purge (Bilateral)</label>
+              <span id="purge-val" class="text-xs text-blue-400 font-mono">0%</span>
+            </div>
+            <input type="range" id="texture-purge-slider" min="0" max="6" step="1" value="0" oninput="setTexturePurgeLevel(this.value)" class="w-full accent-blue-500 h-1.5 bg-studio-700 rounded-lg cursor-pointer" />
+            <p class="text-[11px] text-slate-400 mt-1">Denoises pores and surface noise while keeping silhouette outlines crisp.</p>
+          </div>
+
+          <!-- Graphite Probe Details -->
+          <div>
+            <div class="flex items-center justify-between mb-1.5">
+              <label class="text-xs font-semibold text-slate-300">Graphite Value Probe</label>
+              <button onclick="resetValueZoneIsolation()" id="btn-reset-zone" class="hidden text-[10px] text-blue-400 hover:underline">Reset Zone</button>
+            </div>
+            <p class="text-[11px] text-slate-400 mb-2.5">Hover canvas for pencil hardness. Click any pixel to isolate that value plane.</p>
+            <div class="grid grid-cols-2 gap-1.5 text-[11px] font-mono text-center">
+              <div class="bg-studio-850 p-1.5 rounded border border-studio-800 text-slate-300">2H–H: Highlight</div>
+              <div class="bg-studio-850 p-1.5 rounded border border-studio-800 text-slate-300">HB–2B: Midtone</div>
+              <div class="bg-studio-850 p-1.5 rounded border border-studio-800 text-slate-300">4B–6B: Core Shd</div>
+              <div class="bg-studio-850 p-1.5 rounded border border-studio-800 text-slate-300">8B: Occlusion</div>
+            </div>
+          </div>
+
+          <!-- Extracted Color Palette -->
+          <div>
+            <label class="text-xs font-semibold text-slate-300 block mb-1.5">Extracted Color Palette</label>
+            <div id="inspector-palette" class="grid grid-cols-6 gap-1.5 h-9 rounded-xl overflow-hidden p-1 bg-studio-950 border border-studio-800"></div>
+          </div>
+
+          <!-- Bargue Value Simplifier -->
+          <div>
+            <label class="text-xs font-semibold text-slate-300 flex items-center justify-between mb-2">
+              <span>Bargue Value Simplifier</span>
+              <span id="posterize-label" class="text-blue-400 font-mono text-[11px]">Continuous</span>
+            </label>
+            <div class="grid grid-cols-4 gap-1.5">
+              <button onclick="setPosterizeSteps(0)" class="step-btn py-1.5 rounded text-xs bg-blue-600 text-white font-medium" data-val="0">Raw</button>
+              <button onclick="setPosterizeSteps(2)" class="step-btn py-1.5 rounded text-xs bg-studio-800 hover:bg-studio-700 text-slate-300 font-medium" data-val="2">2 (Notan)</button>
+              <button onclick="setPosterizeSteps(4)" class="step-btn py-1.5 rounded text-xs bg-studio-800 hover:bg-studio-700 text-slate-300 font-medium" data-val="4">4 Tone</button>
+              <button onclick="setPosterizeSteps(8)" class="step-btn py-1.5 rounded text-xs bg-studio-800 hover:bg-studio-700 text-slate-300 font-medium" data-val="8">8 Tone</button>
+            </div>
+          </div>
+
+          <!-- Line-Art Contour -->
+          <div>
+            <div class="flex items-center justify-between mb-1.5">
+              <label class="text-xs font-semibold text-slate-300">Line-Art Outline Filter</label>
+              <input type="checkbox" id="contour-toggle" onchange="toggleSobel()" class="rounded bg-studio-800 border-studio-700 text-blue-600 focus:ring-0 w-4 h-4 cursor-pointer" />
+            </div>
+          </div>
+
+          <!-- Tonal Balance -->
+          <div class="space-y-3">
+            <span class="text-xs font-semibold text-slate-300 block">Tonal Balance</span>
+            <div class="flex items-center justify-between">
+              <span class="text-xs text-slate-400">100% Grayscale</span>
+              <button onclick="toggleGrayscale()" id="btn-grayscale" class="text-xs px-3 py-1 rounded bg-studio-800 border border-studio-700 text-slate-300 hover:text-white">Enable</button>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-xs text-slate-400">Horizontal Mirror (M)</span>
+              <button onclick="toggleMirror()" id="btn-mirror" class="text-xs px-3 py-1 rounded bg-studio-800 border border-studio-700 text-slate-300 hover:text-white">Flip</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CAMERA LUCIDA MIRROR STUDIO -->
+  <div id="tracing-studio" class="fixed inset-0 z-50 hidden bg-black flex flex-col">
+    
+    <!-- Top HUD -->
+    <header class="absolute top-0 inset-x-0 z-30 h-16 bg-gradient-to-b from-black/95 via-black/60 to-transparent flex items-center justify-between px-6 pointer-events-auto">
+      <div class="flex items-center gap-3">
+        <span id="phone-stream-indicator" class="w-3 h-3 rounded-full bg-amber-400 animate-pulse"></span>
+        <div>
+          <h2 class="text-sm font-bold text-white flex items-center gap-2">
+            Camera Lucida Tracing Studio
+            <span id="stream-source-badge" class="text-[10px] px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 uppercase tracking-wider">Awaiting Phone...</span>
+            <span id="lock-badge" class="hidden text-[10px] px-2 py-0.5 rounded bg-amber-500/20 text-amber-400 border border-amber-500/30 uppercase tracking-widest">Locked</span>
+          </h2>
+          <p class="text-[11px] text-slate-300" id="studio-subtext">Scan QR code on your phone to mirror camera and sync controls</p>
+        </div>
+      </div>
+
+      <!-- Controls -->
+      <div class="flex items-center gap-2">
+        
+        <!-- FEATURE 1: SIGHT-SIZE METRIC CALIBRATION -->
+        <button onclick="toggleSightSizeCalibration()" id="btn-sight-size" class="px-2.5 py-1.5 rounded-xl bg-studio-800/90 hover:bg-studio-700 border border-studio-600 text-xs font-semibold text-emerald-400 flex items-center gap-1 transition" title="Calibrate physical millimeter scale using a card/ruler">
+          <i data-lucide="ruler" class="w-3.5 h-3.5"></i>
+          <span>Sight-Size</span>
+        </button>
+
+        <!-- FEATURE 2: TIMELAPSE RECORDER -->
+        <button onclick="toggleTimelapseRecording()" id="btn-timelapse" class="px-2.5 py-1.5 rounded-xl bg-studio-800/90 hover:bg-studio-700 border border-studio-600 text-xs font-semibold text-rose-400 flex items-center gap-1 transition" title="Record drawing timelapse">
+          <i data-lucide="video" class="w-3.5 h-3.5"></i>
+          <span id="timelapse-btn-text">Timelapse</span>
+        </button>
+
+        <!-- FEATURE 4: MUSCLE MEMORY STROBE TRAINER -->
+        <button onclick="toggleMuscleMemoryTrainer()" id="btn-memory-trainer" class="px-2.5 py-1.5 rounded-xl bg-studio-800/90 hover:bg-studio-700 border border-studio-600 text-xs font-semibold text-indigo-300 flex items-center gap-1 transition" title="Strobe: 3s Visible / 7s Blind Memory Practice">
+          <i data-lucide="brain" class="w-3.5 h-3.5"></i>
+          <span id="memory-trainer-text">Trainer</span>
+        </button>
+
+        <!-- Flicker & Diff -->
+        <button onclick="toggleFlickerStrobe()" id="btn-flicker" class="px-2.5 py-1.5 rounded-xl bg-studio-800/90 hover:bg-studio-700 border border-studio-600 text-xs font-semibold text-amber-300 flex items-center gap-1 transition" title="Rapid A/B Flicker (Hotkey: Tab)">
+          <i data-lucide="zap" class="w-3.5 h-3.5"></i>
+          <span>Flicker</span>
+        </button>
+
+        <button onclick="toggleDiffBlendMode()" id="btn-diff-blend" class="px-2.5 py-1.5 rounded-xl bg-studio-800/90 hover:bg-studio-700 border border-studio-600 text-xs font-semibold text-rose-400 flex items-center gap-1 transition" title="Optical Difference Blend">
+          <i data-lucide="layers" class="w-3.5 h-3.5"></i>
+          <span>Diff</span>
+        </button>
+
+        <button onclick="toggleKeystoneMode()" id="keystone-btn" class="px-3 py-1.5 rounded-xl bg-studio-800/90 hover:bg-studio-700 border border-studio-600 text-xs font-semibold text-slate-200 flex items-center gap-1.5 transition">
+          <i data-lucide="move" class="w-3.5 h-3.5 text-blue-400"></i>
+          <span class="hidden sm:inline">Keystone</span>
+        </button>
+
+        <button onclick="togglePhoneTorchRemote()" id="remote-torch-btn" class="px-3 py-1.5 rounded-xl bg-studio-800/90 hover:bg-studio-700 border border-studio-600 text-xs font-semibold text-amber-300 flex items-center gap-1.5 transition">
+          <i data-lucide="flashlight" class="w-3.5 h-3.5"></i>
+          <span id="pc-torch-label">Torch</span>
+        </button>
+
+        <button onclick="undoTransform()" class="px-3 py-1.5 rounded-xl bg-studio-800/90 hover:bg-studio-700 border border-studio-600 text-xs font-semibold text-slate-200 flex items-center gap-1.5 transition">
+          <i data-lucide="undo-2" class="w-3.5 h-3.5 text-blue-400"></i>
+        </button>
+
+        <button onclick="toggleQrCard()" class="px-3 py-1.5 rounded-xl bg-studio-800/90 hover:bg-studio-700 border border-studio-600 text-xs font-semibold text-slate-300 flex items-center gap-1.5 transition">
+          <i data-lucide="qr-code" class="w-3.5 h-3.5 text-emerald-400"></i>
+        </button>
+
+        <button onclick="closeTracingStudio()" class="px-3.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-semibold transition">
+          Exit
+        </button>
+      </div>
+    </header>
+
+    <!-- Studio Viewport -->
+    <div id="tracing-viewport" class="relative flex-1 w-full h-full overflow-hidden flex items-center justify-center p-4">
+      <div id="phone-stage" class="relative max-h-full max-w-full aspect-[9/16] rounded-2xl overflow-hidden shadow-2xl flex items-center justify-center cursor-move bg-slate-950 border border-studio-800">
+        <canvas id="phone-stream-canvas" class="w-full h-full object-cover z-0 hidden pointer-events-none"></canvas>
+        <div id="paper-desk-fallback" class="absolute inset-0 paper-texture z-0 flex items-center justify-center flex-col text-slate-700"></div>
+
+        <!-- Reference Overlay Container -->
+        <div id="overlay-container" class="absolute z-20 pointer-events-none transition-transform duration-75 flex items-center justify-center" style="width: 75%; transform-origin: 0 0; transform: translate(0px, 0px) scale(1) rotate(0deg);">
+          <img id="overlay-image" src="" alt="Reference Guide" class="w-full h-auto max-h-[85vh] object-contain shadow-2xl pointer-events-auto" style="opacity: 0.5;" />
+        </div>
+
+        <!-- Keystone Handles -->
+        <div id="keystone-handles" class="absolute inset-0 z-40 pointer-events-none hidden">
+          <div id="pin-tl" class="keystone-pin pointer-events-auto" title="Top-Left Corner"></div>
+          <div id="pin-tr" class="keystone-pin pointer-events-auto" title="Top-Right Corner"></div>
+          <div id="pin-br" class="keystone-pin pointer-events-auto" title="Bottom-Right Corner"></div>
+          <div id="pin-bl" class="keystone-pin pointer-events-auto" title="Bottom-Left Corner"></div>
+        </div>
+
+        <!-- Sight-Size Calibration Pins & Scale Bar -->
+        <div id="sight-size-layer" class="absolute inset-0 z-40 pointer-events-none hidden">
+          <div id="sight-p1" class="sight-pin pointer-events-auto" style="left: 20%; top: 50%;"></div>
+          <div id="sight-p2" class="sight-pin pointer-events-auto" style="left: 60%; top: 50%;"></div>
+          <div class="absolute top-4 left-4 bg-studio-900/90 border border-emerald-500 p-2.5 rounded-xl text-xs text-white space-y-1 pointer-events-auto shadow-2xl">
+            <div class="font-bold text-emerald-400 flex items-center gap-1.5">
+              <i data-lucide="ruler" class="w-3.5 h-3.5"></i>
+              <span>Sight-Size Calibrator</span>
+            </div>
+            <p class="text-[10px] text-slate-300">Align pins with card/ruler edges on your paper</p>
+            <div class="flex items-center gap-1.5 pt-1">
+              <input type="number" id="sight-input-mm" value="85.6" class="w-16 bg-studio-950 border border-studio-700 text-center rounded text-xs py-0.5 text-white" />
+              <span class="text-[10px] text-slate-400">mm</span>
+              <button onclick="commitSightSizeScale()" class="px-2 py-0.5 rounded bg-emerald-600 text-white font-bold text-[10px]">Lock Scale</button>
+            </div>
+            <div id="metric-readout" class="text-[10px] text-emerald-300 font-mono mt-1">Scale: 1:1 Metric Locked</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Floating QR Card -->
+      <div id="floating-qr-card" class="absolute z-30 bg-studio-900/95 border border-studio-700 rounded-3xl p-6 text-center max-w-sm w-full shadow-2xl backdrop-blur-md transition-all duration-300 pointer-events-auto">
+        <div class="w-12 h-12 mx-auto rounded-2xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center border border-emerald-500/20 mb-3">
+          <i data-lucide="smartphone" class="w-6 h-6"></i>
+        </div>
+        <h3 class="text-base font-bold text-white mb-1">Scan with Phone Camera</h3>
+        <p class="text-xs text-slate-400 mb-4">Direct persistent WebSocket link across any network.</p>
+        <div class="p-3 bg-white rounded-2xl inline-block shadow-inner mx-auto mb-3" id="in-studio-qrcode"></div>
+        <div class="text-[11px] text-emerald-400 break-all px-2 font-mono mb-2" id="in-studio-link-text"></div>
+        <button onclick="toggleQrCard()" class="w-full py-2 rounded-xl bg-studio-800 hover:bg-studio-700 text-slate-300 text-xs font-semibold">Minimize Card</button>
+      </div>
+    </div>
+
+    <!-- Quick-Swap Pinboard Dock -->
+    <div id="studio-pin-dock" class="absolute bottom-28 inset-x-0 z-30 flex justify-center px-4 pointer-events-none">
+      <div class="pointer-events-auto bg-studio-900/85 backdrop-blur-md border border-studio-700 rounded-2xl p-2 shadow-2xl flex items-center space-x-2 max-w-md overflow-x-auto">
+        <span class="text-[10px] uppercase font-bold text-slate-400 px-2 flex items-center gap-1">
+          <i data-lucide="bookmark" class="w-3.5 h-3.5 text-amber-400"></i>
+          <span>Swap:</span>
+        </span>
+        <div id="dock-thumbnails" class="flex items-center space-x-2"></div>
+      </div>
+    </div>
+
+    <!-- Bottom HUD -->
+    <footer class="absolute bottom-6 inset-x-0 z-30 flex justify-center px-4 pointer-events-none">
+      <div class="pointer-events-auto bg-studio-900/95 backdrop-blur-md border border-studio-700 rounded-2xl shadow-2xl p-3 sm:p-4 max-w-xl w-full flex flex-col gap-3">
+        <div class="flex items-center gap-4">
+          <div class="flex items-center gap-2 flex-1">
+            <i data-lucide="eye" class="w-4 h-4 text-blue-400"></i>
+            <span class="text-xs font-semibold text-slate-300">Ghost Opacity</span>
+            <input type="range" id="opacity-slider" min="0" max="1" step="0.01" value="0.5" oninput="updateOpacity(this.value)" class="flex-1 accent-blue-500 cursor-pointer h-1.5 bg-studio-700 rounded-lg" />
+            <span id="opacity-val" class="text-xs font-mono text-blue-300 w-8">50%</span>
+          </div>
+
+          <button onclick="toggleCanvasLock()" id="canvas-lock-btn" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-studio-800 hover:bg-studio-700 border border-studio-700 text-xs font-semibold text-slate-200 transition">
+            <i id="lock-icon" data-lucide="unlock" class="w-3.5 h-3.5 text-slate-400"></i>
+            <span id="lock-text">Lock Position</span>
+          </button>
+        </div>
+
+        <div class="flex items-center justify-between border-t border-studio-800 pt-2.5 text-xs">
+          <div class="flex items-center gap-2">
+            <button onclick="rotateOverlayStep()" class="px-2.5 py-1.5 rounded-lg bg-studio-800 hover:bg-studio-700 border border-studio-700 text-slate-300 flex items-center gap-1.5 transition">
+              <i data-lucide="rotate-cw" class="w-3.5 h-3.5 text-blue-400"></i>
+              <span>Rotate 90°</span>
+            </button>
+            <button onclick="toggleTraceContourMode()" id="trace-contour-btn" class="px-2.5 py-1.5 rounded-lg bg-studio-800 hover:bg-studio-700 border border-studio-700 text-slate-300 flex items-center gap-1.5 transition">
+              <i data-lucide="pencil" class="w-3.5 h-3.5 text-amber-400"></i>
+              <span>Outline Only</span>
+            </button>
+            <button onclick="flipTraceOverlay()" class="px-2.5 py-1.5 rounded-lg bg-studio-800 hover:bg-studio-700 border border-studio-700 text-slate-300 flex items-center gap-1.5 transition">
+              <i data-lucide="flip-horizontal" class="w-3.5 h-3.5"></i>
+              <span>Flip</span>
+            </button>
+          </div>
+
+          <button onclick="resetOverlayTransform()" class="px-2.5 py-1.5 text-slate-400 hover:text-white">Reset Position</button>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <!-- SCRIPT LOGIC -->
+  <script>
+    const API_BASE = window.location.origin;
+    let activeReferences = [];
+    let currentInspectorItem = null;
+    let activeRefId = "img_default";
+    let currentAiRefId = null;
+    let selectedAiStyle = "classical charcoal sketch";
+
+    // Pinboard State
+    let pinnedItems = JSON.parse(localStorage.getItem('sketchref_pins') || '[]');
+
+    // Canvas & Inspector
+    let originalImageObj = new Image();
+    let isGrayscale = false;
+    let isSobel = false;
+    let isMirrored = false;
+    let posterizeSteps = 0;
+    let texturePurgeLevel = 0;
+    let isolatedValueTarget = null;
+
+    // Relighting State
+    let isRelightingEnabled = false;
+    let lightVector = { x: 0.5, y: -0.5, z: 0.7 };
+    let normalMapData = null;
+
+    // Studio & Transform State
+    let isTracingActive = false;
+    let isCanvasLocked = false;
+    let isTraceContourOnly = false;
+    let isTraceMirrored = false;
+    let isPhoneTorchActive = false;
+    let currentOpacity = 0.5;
+    let savedFlickerOpacity = 0.5;
+    let isDiffModeActive = false;
+
+    let traceTransform = { x: 0, y: 0, scale: 1, rotation: 0 };
+    let transformHistory = [];
+    let isDragging = false;
+    let dragStart = { x: 0, y: 0 };
+    let studioWs = null;
+
+    // Keystone State
+    let isKeystoneActive = false;
+    let keystonePins = [
+      { x: 0.1, y: 0.1 }, { x: 0.9, y: 0.1 },
+      { x: 0.9, y: 0.9 }, { x: 0.1, y: 0.9 }
+    ];
+    let activeKeystonePin = null;
+
+    // Sight-Size Calibration State
+    let isSightSizeActive = false;
+    let sightPin1 = { x: 0.2, y: 0.5 };
+    let sightPin2 = { x: 0.6, y: 0.5 };
+    let activeSightPin = null;
+
+    // Timelapse Recorder State
+    let isTimelapseRecording = false;
+    let timelapseFrames = [];
+    let timelapseInterval = null;
+
+    // Muscle Memory Trainer State
+    let isMemoryTrainerActive = false;
+    let memoryTrainerInterval = null;
+
+    function switchSection(section) {
+      document.getElementById('section-web').classList.add('hidden');
+      document.getElementById('section-pinterest').classList.add('hidden');
+      document.getElementById('section-ai').classList.add('hidden');
+
+      const btnWeb = document.getElementById('nav-btn-web');
+      const btnPin = document.getElementById('nav-btn-pinterest');
+      const btnAi = document.getElementById('nav-btn-ai');
+
+      btnWeb.className = "flex items-center space-x-1.5 px-3.5 py-1.5 rounded-lg text-slate-400 hover:text-white transition-all";
+      btnPin.className = "flex items-center space-x-1.5 px-3.5 py-1.5 rounded-lg text-slate-400 hover:text-white transition-all";
+      btnAi.className = "flex items-center space-x-1.5 px-3.5 py-1.5 rounded-lg text-slate-400 hover:text-white transition-all";
+
+      if (section === 'web') {
+        document.getElementById('section-web').classList.remove('hidden');
+        btnWeb.className = "flex items-center space-x-1.5 px-3.5 py-1.5 rounded-lg bg-blue-600 text-white transition-all";
+      } else if (section === 'pinterest') {
+        document.getElementById('section-pinterest').classList.remove('hidden');
+        btnPin.className = "flex items-center space-x-1.5 px-3.5 py-1.5 rounded-lg bg-pinterest text-white transition-all";
+        executePinterestSearch(document.getElementById('pinterest-input').value.trim());
+      } else if (section === 'ai') {
+        document.getElementById('section-ai').classList.remove('hidden');
+        btnAi.className = "flex items-center space-x-1.5 px-3.5 py-1.5 rounded-lg bg-amber-500 text-slate-950 font-bold transition-all";
+      }
+    }
+
+    // -------------------------------------------------------------
+    // WEBSOCKET STUDIO (NATIVE RENDER WSS)
+    // -------------------------------------------------------------
+    function connectStudioWebSocket(sessionId) {
+      const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      studioWs = new WebSocket(`${proto}//${window.location.host}/ws/session/${sessionId}`);
+
+      studioWs.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.action === 'PHONE_CONNECTED') {
+            document.getElementById('floating-qr-card').classList.add('hidden');
+            document.getElementById('stream-source-badge').innerText = "Phone Connected";
+            broadcastCurrentTransform();
+          }
+          if (data.action === 'CAMERA_FRAME' && data.frame) {
+            const pCanvas = document.getElementById('phone-stream-canvas');
+            pCanvas.classList.remove('hidden');
+            document.getElementById('paper-desk-fallback').classList.add('hidden');
+            const img = new Image();
+            img.src = data.frame;
+            img.onload = () => {
+              pCanvas.width = img.naturalWidth;
+              pCanvas.height = img.naturalHeight;
+              pCanvas.getContext('2d').drawImage(img, 0, 0);
+            };
+          }
+          if (data.action === 'TORCH_STATUS') {
+            isPhoneTorchActive = data.enabled;
+            document.getElementById('pc-torch-label').innerText = isPhoneTorchActive ? "Torch ON" : "Torch";
+          }
+        } catch(e) {}
+      };
+    }
+
+    function broadcastCurrentTransform() {
+      if (!studioWs || studioWs.readyState !== WebSocket.OPEN) return;
+      const stage = document.getElementById('phone-stage');
+      studioWs.send(JSON.stringify({
+        action: 'SYNC_TRANSFORM',
+        xPct: traceTransform.x / stage.clientWidth,
+        yPct: traceTransform.y / stage.clientHeight,
+        scale: traceTransform.scale,
+        rotation: traceTransform.rotation,
+        mirrored: isTraceMirrored,
+        opacity: currentOpacity,
+        contour: isTraceContourOnly,
+        blendMode: isDiffModeActive ? "difference" : "normal"
+      }));
+    }
+
+    function togglePhoneTorchRemote() {
+      isPhoneTorchActive = !isPhoneTorchActive;
+      document.getElementById('pc-torch-label').innerText = isPhoneTorchActive ? "Torch ON" : "Torch";
+      if (studioWs && studioWs.readyState === WebSocket.OPEN) {
+        studioWs.send(JSON.stringify({ action: 'TOGGLE_TORCH', enabled: isPhoneTorchActive }));
+      }
+    }
+
+    // -------------------------------------------------------------
+    // SIGHT-SIZE PHYSICAL SCALE CALIBRATION
+    // -------------------------------------------------------------
+    function toggleSightSizeCalibration() {
+      isSightSizeActive = !isSightSizeActive;
+      const layer = document.getElementById('sight-size-layer');
+      const btn = document.getElementById('btn-sight-size');
+
+      if (isSightSizeActive) {
+        layer.classList.remove('hidden');
+        btn.classList.add('bg-emerald-600', 'text-white');
+        updateSightPinsDOM();
+      } else {
+        layer.classList.add('hidden');
+        btn.classList.remove('bg-emerald-600', 'text-white');
+      }
+    }
+
+    function updateSightPinsDOM() {
+      const stage = document.getElementById('phone-stage');
+      const w = stage.clientWidth;
+      const h = stage.clientHeight;
+
+      const p1 = document.getElementById('sight-p1');
+      const p2 = document.getElementById('sight-p2');
+      p1.style.left = `${sightPin1.x * w}px`;
+      p1.style.top = `${sightPin1.y * h}px`;
+      p2.style.left = `${sightPin2.x * w}px`;
+      p2.style.top = `${sightPin2.y * h}px`;
+    }
+
+    function commitSightSizeScale() {
+      const stage = document.getElementById('phone-stage');
+      const w = stage.clientWidth;
+      const h = stage.clientHeight;
+
+      const dx = (sightPin2.x - sightPin1.x) * w;
+      const dy = (sightPin2.y - sightPin1.y) * h;
+      const pixelDistance = Math.sqrt(dx * dx + dy * dy);
+
+      const targetMm = parseFloat(document.getElementById('sight-input-mm').value) || 85.6;
+      const pixelsPerMm = pixelDistance / targetMm;
+
+      traceTransform.scale = (pixelsPerMm * 50) / (originalImageObj.naturalWidth || 600);
+      applyTransform();
+      broadcastCurrentTransform();
+
+      document.getElementById('metric-readout').innerText = `Calibrated: ${(pixelsPerMm).toFixed(2)} px/mm`;
+      toggleSightSizeCalibration();
+    }
+
+    // -------------------------------------------------------------
+    // TIMELAPSE RECORDER & EXPORT
+    // -------------------------------------------------------------
+    function toggleTimelapseRecording() {
+      isTimelapseRecording = !isTimelapseRecording;
+      const btn = document.getElementById('btn-timelapse');
+      const text = document.getElementById('timelapse-btn-text');
+
+      if (isTimelapseRecording) {
+        timelapseFrames = [];
+        btn.classList.add('bg-rose-600', 'text-white', 'animate-pulse');
+        text.innerText = "Rec (0s)";
+
+        let elapsed = 0;
+        timelapseInterval = setInterval(() => {
+          elapsed += 3;
+          text.innerText = `Rec (${elapsed}s)`;
+          captureTimelapseFrame();
+        }, 3000);
+      } else {
+        clearInterval(timelapseInterval);
+        btn.classList.remove('bg-rose-600', 'text-white', 'animate-pulse');
+        text.innerText = "Exporting...";
+        exportTimelapseVideo();
+      }
+    }
+
+    function captureTimelapseFrame() {
+      const pCanvas = document.getElementById('phone-stream-canvas');
+      if (!pCanvas || pCanvas.width === 0) return;
+
+      const frameCanvas = document.createElement('canvas');
+      frameCanvas.width = 640;
+      frameCanvas.height = 360;
+      const ctx = frameCanvas.getContext('2d');
+      ctx.drawImage(pCanvas, 0, 0, 640, 360);
+      timelapseFrames.push(frameCanvas);
+    }
+
+    async function exportTimelapseVideo() {
+      if (timelapseFrames.length === 0) {
+        alert("No frames captured yet. Start recording and draw under the camera first!");
+        document.getElementById('timelapse-btn-text').innerText = "Timelapse";
+        return;
+      }
+
+      const streamCanvas = document.createElement('canvas');
+      streamCanvas.width = 640;
+      streamCanvas.height = 360;
+      const ctx = streamCanvas.getContext('2d');
+      const stream = streamCanvas.captureStream(10);
+      const recorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
+      const chunks = [];
+
+      recorder.ondataavailable = e => {
+        if (e.data && e.data.size > 0) chunks.push(e.data);
+      };
+
+      recorder.onstop = () => {
+        const blob = new Blob(chunks, { type: 'video/webm' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `sketchref-timelapse-${Date.now()}.webm`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        document.getElementById('timelapse-btn-text').innerText = "Timelapse";
+      };
+
+      recorder.start();
+      for (const frame of timelapseFrames) {
+        ctx.drawImage(frame, 0, 0);
+        await new Promise(r => setTimeout(r, 100));
+      }
+      recorder.stop();
+    }
+
+    // -------------------------------------------------------------
+    // 3D VIRTUAL RELIGHTING (NORMAL MAP DERIVATIVE)
+    // -------------------------------------------------------------
+    function toggleRelightingMode() {
+      isRelightingEnabled = document.getElementById('relight-toggle').checked;
+      const controls = document.getElementById('relight-controls');
+      controls.classList.toggle('hidden', !isRelightingEnabled);
+
+      if (isRelightingEnabled) {
+        generateNormalMapData();
+      }
+      drawToCanvas();
+    }
+
+    function generateNormalMapData() {
+      const canvas = document.getElementById('study-canvas');
+      const w = canvas.width;
+      const h = canvas.height;
+      const ctx = canvas.getContext('2d');
+      const imgData = ctx.getImageData(0, 0, w, h);
+      const d = imgData.data;
+
+      normalMapData = new Float32Array(w * h * 3);
+
+      for (let y = 1; y < h - 1; y++) {
+        for (let x = 1; x < w - 1; x++) {
+          const lumL = 0.299 * d[((y * w) + (x - 1)) * 4];
+          const lumR = 0.299 * d[((y * w) + (x + 1)) * 4];
+          const lumU = 0.299 * d[(((y - 1) * w) + x) * 4];
+          const lumD = 0.299 * d[(((y + 1) * w) + x) * 4];
+
+          let nx = (lumL - lumR) / 255.0;
+          let ny = (lumU - lumD) / 255.0;
+          let nz = 0.45;
+
+          const len = Math.sqrt(nx * nx + ny * ny + nz * nz) || 1;
+          const idx = (y * w + x) * 3;
+          normalMapData[idx] = nx / len;
+          normalMapData[idx + 1] = ny / len;
+          normalMapData[idx + 2] = nz / len;
+        }
+      }
+    }
+
+    function setupLightOrbGesture() {
+      const pad = document.getElementById('light-orb-pad');
+      const handle = document.getElementById('light-orb-handle');
+      let isDraggingOrb = false;
+
+      const updateOrbPos = (clientX, clientY) => {
+        const rect = pad.getBoundingClientRect();
+        const cx = rect.left + rect.width / 2;
+        const cy = rect.top + rect.height / 2;
+
+        let dx = (clientX - cx) / (rect.width / 2);
+        let dy = (clientY - cy) / (rect.height / 2);
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist > 1) { dx /= dist; dy /= dist; }
+
+        handle.style.left = `${(dx + 1) * 50}%`;
+        handle.style.top = `${(dy + 1) * 50}%`;
+
+        lightVector.x = dx;
+        lightVector.y = dy;
+        lightVector.z = Math.sqrt(Math.max(0, 1 - dx * dx - dy * dy));
+        drawToCanvas();
+      };
+
+      pad.addEventListener('mousedown', e => { isDraggingOrb = true; updateOrbPos(e.clientX, e.clientY); });
+      window.addEventListener('mousemove', e => { if (isDraggingOrb) updateOrbPos(e.clientX, e.clientY); });
+      window.addEventListener('mouseup', () => { isDraggingOrb = false; });
+    }
+
+    // -------------------------------------------------------------
+    // MUSCLE MEMORY STROBE TRAINER (3s Visible / 7s Blind)
+    // -------------------------------------------------------------
+    function toggleMuscleMemoryTrainer() {
+      isMemoryTrainerActive = !isMemoryTrainerActive;
+      const btn = document.getElementById('btn-memory-trainer');
+      const text = document.getElementById('memory-trainer-text');
+
+      if (isMemoryTrainerActive) {
+        btn.classList.add('bg-indigo-600', 'text-white');
+        text.innerText = "Strobe Active";
+        let isVisiblePhase = true;
+
+        memoryTrainerInterval = setInterval(() => {
+          isVisiblePhase = !isVisiblePhase;
+          playAudioChime(isVisiblePhase ? 880 : 440);
+          updateOpacity(isVisiblePhase ? (savedFlickerOpacity || 0.5) : 0);
+          text.innerText = isVisiblePhase ? "3s Observe" : "7s Blind Draw";
+        }, isVisiblePhase ? 3000 : 7000);
+      } else {
+        clearInterval(memoryTrainerInterval);
+        btn.classList.remove('bg-indigo-600', 'text-white');
+        text.innerText = "Trainer";
+        updateOpacity(savedFlickerOpacity || 0.5);
+      }
+    }
+
+    // -------------------------------------------------------------
+    // BILATERAL TEXTURE PURGE (DENOISE SURFACE)
+    // -------------------------------------------------------------
+    function setTexturePurgeLevel(val) {
+      texturePurgeLevel = parseInt(val);
+      document.getElementById('purge-val').innerText = `${texturePurgeLevel * 16}%`;
+      drawToCanvas();
+    }
+
+    function applyBilateralSimplifier(imgData, width, height, passes) {
+      if (passes <= 0) return imgData;
+      const src = imgData.data;
+      const output = new ImageData(width, height);
+      const dst = output.data;
+      dst.set(src);
+
+      for (let p = 0; p < passes; p++) {
+        for (let y = 1; y < height - 1; y++) {
+          for (let x = 1; x < width - 1; x++) {
+            const idx = (y * width + x) * 4;
+            const centerLum = 0.299 * dst[idx] + 0.587 * dst[idx + 1] + 0.114 * dst[idx + 2];
+
+            let sumR = 0, sumG = 0, sumB = 0, totalW = 0;
+            for (let ky = -1; ky <= 1; ky++) {
+              for (let kx = -1; kx <= 1; kx++) {
+                const nIdx = ((y + ky) * width + (x + kx)) * 4;
+                const nLum = 0.299 * dst[nIdx] + 0.587 * dst[nIdx + 1] + 0.114 * dst[nIdx + 2];
+                const lumDiff = Math.abs(centerLum - nLum);
+
+                const weight = lumDiff < 35 ? 1 : 0.05;
+                sumR += dst[nIdx] * weight;
+                sumG += dst[nIdx + 1] * weight;
+                sumB += dst[nIdx + 2] * weight;
+                totalW += weight;
+              }
+            }
+            dst[idx] = sumR / totalW;
+            dst[idx + 1] = sumG / totalW;
+            dst[idx + 2] = sumB / totalW;
+          }
+        }
+      }
+      return output;
+    }
+
+    // -------------------------------------------------------------
+    // CANVAS RENDERER PIPELINE
+    // -------------------------------------------------------------
+    function drawToCanvas() {
+      const canvas = document.getElementById('study-canvas');
+      const ctx = canvas.getContext('2d');
+
+      const maxDim = 800;
+      let w = originalImageObj.naturalWidth || 600;
+      let h = originalImageObj.naturalHeight || 600;
+      if (w > maxDim || h > maxDim) {
+        if (w > h) { h = Math.round((h * maxDim) / w); w = maxDim; }
+        else { w = Math.round((w * maxDim) / h); h = maxDim; }
+      }
+
+      canvas.width = w;
+      canvas.height = h;
+
+      ctx.save();
+      if (isMirrored) {
+        ctx.scale(-1, 1);
+        ctx.drawImage(originalImageObj, -w, 0, w, h);
+      } else {
+        ctx.drawImage(originalImageObj, 0, 0, w, h);
+      }
+      ctx.restore();
+
+      let imgData = ctx.getImageData(0, 0, w, h);
+
+      if (texturePurgeLevel > 0) {
+        imgData = applyBilateralSimplifier(imgData, w, h, texturePurgeLevel);
+      }
+
+      let d = imgData.data;
+
+      if (isGrayscale || posterizeSteps > 0 || isSobel || isolatedValueTarget !== null) {
+        for (let i = 0; i < d.length; i += 4) {
+          const lum = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
+          d[i] = lum; d[i + 1] = lum; d[i + 2] = lum;
+        }
+      }
+
+      if (isRelightingEnabled && normalMapData) {
+        for (let y = 1; y < h - 1; y++) {
+          for (let x = 1; x < w - 1; x++) {
+            const pIdx = (y * w + x) * 4;
+            const nIdx = (y * w + x) * 3;
+            const dot = Math.max(0.08, (normalMapData[nIdx] * lightVector.x + normalMapData[nIdx + 1] * lightVector.y + normalMapData[nIdx + 2] * lightVector.z));
+            d[pIdx] = Math.min(255, d[pIdx] * dot * 1.5);
+            d[pIdx + 1] = Math.min(255, d[pIdx + 1] * dot * 1.5);
+            d[pIdx + 2] = Math.min(255, d[pIdx + 2] * dot * 1.5);
+          }
+        }
+      }
+
+      if (posterizeSteps > 0) {
+        const stepSize = 255 / (posterizeSteps - 1);
+        for (let i = 0; i < d.length; i += 4) {
+          const quant = Math.round(d[i] / stepSize) * stepSize;
+          d[i] = quant; d[i + 1] = quant; d[i + 2] = quant;
+        }
+      }
+
+      if (isolatedValueTarget !== null) {
+        const target = isolatedValueTarget;
+        for (let i = 0; i < d.length; i += 4) {
+          if (Math.abs(d[i] - target) <= 25) {
+            d[i] = 59; d[i + 1] = 130; d[i + 2] = 246;
+          } else {
+            d[i] *= 0.2; d[i + 1] *= 0.2; d[i + 2] *= 0.2;
+          }
+        }
+      }
+
+      if (isSobel) {
+        imgData = applySobelFilter(imgData, w, h);
+      }
+
+      ctx.putImageData(imgData, 0, 0);
+    }
+
+    function applySobelFilter(imgData, width, height) {
+      const src = imgData.data;
+      const output = new ImageData(width, height);
+      const dst = output.data;
+      const gx = [-1, 0, 1, -2, 0, 2, -1, 0, 1];
+      const gy = [-1, -2, -1, 0, 0, 0, 1, 2, 1];
+
+      for (let y = 1; y < height - 1; y++) {
+        for (let x = 1; x < width - 1; x++) {
+          let sumX = 0, sumY = 0;
+          for (let ky = -1; ky <= 1; ky++) {
+            for (let kx = -1; kx <= 1; kx++) {
+              const val = src[((y + ky) * width + (x + kx)) * 4];
+              sumX += val * gx[(ky + 1) * 3 + (kx + 1)];
+              sumY += val * gy[(ky + 1) * 3 + (kx + 1)];
+            }
+          }
+          const edge = Math.sqrt(sumX * sumX + sumY * sumY) > 50 ? 0 : 255;
+          const idx = (y * width + x) * 4;
+          dst[idx] = edge; dst[idx + 1] = edge; dst[idx + 2] = edge; dst[idx + 3] = 255;
+        }
+      }
+      return output;
+    }
+
+    // -------------------------------------------------------------
+    // DRAG & DROP / FILE IMPORT
+    // -------------------------------------------------------------
+    function setupDragAndDropIngestion() {
+      const dropOverlay = document.getElementById('drop-overlay');
+
+      window.addEventListener('dragover', (e) => {
+        if (e.dataTransfer && e.dataTransfer.types.includes('Files')) {
+          e.preventDefault();
+          dropOverlay.classList.remove('hidden');
+        }
+      });
+
+      window.addEventListener('dragleave', (e) => {
+        if (e.clientX <= 0 || e.clientY <= 0) dropOverlay.classList.add('hidden');
+      });
+
+      window.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropOverlay.classList.add('hidden');
+        if (e.dataTransfer && e.dataTransfer.files) ingestFiles(e.dataTransfer.files);
+      });
+    }
+
+    function handleFileInput(e) {
+      if (e.target.files && e.target.files.length > 0) ingestFiles(e.target.files);
+      e.target.value = '';
+    }
+
+    function ingestFiles(files) {
+      if (!files || files.length === 0) return;
+      switchSection('web');
+
+      Array.from(files).forEach(file => {
+        if (!file.type.startsWith('image/')) return;
+        const reader = new FileReader();
+        reader.onload = async (event) => {
+          const dataUrl = event.target.result;
+          const refId = `local_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+          const rawName = file.name.replace(/\.[^/.]+$/, "").slice(0, 30);
+          const cleanTitle = rawName.charAt(0).toUpperCase() + rawName.slice(1);
+
+          const localItem = {
+            id: refId,
+            title: cleanTitle || "Imported Reference",
+            category: "Local Stash",
+            angle: "User Upload",
+            lighting: "Custom Reference",
+            imageUrl: dataUrl,
+            thumbnailUrl: dataUrl,
+            aspect: "portrait",
+            tags: ["local", "stash"]
+          };
+
+          activeReferences.unshift(localItem);
+          pinReference(localItem);
+          renderGrid(activeReferences, 'reference-grid');
+          window.scrollTo({ top: 400, behavior: 'smooth' });
+
+          try {
+            await fetch(`${API_BASE}/api/stash`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(localItem)
+            });
+          } catch(err) {}
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    // -------------------------------------------------------------
+    // OPTICAL FLICKER & DIFF BLEND
+    // -------------------------------------------------------------
+    function toggleFlickerStrobe() {
+      if (currentOpacity > 0.05) {
+        savedFlickerOpacity = currentOpacity;
+        updateOpacity(0);
+      } else {
+        updateOpacity(savedFlickerOpacity || 0.5);
+      }
+    }
+
+    function toggleDiffBlendMode() {
+      isDiffModeActive = !isDiffModeActive;
+      const img = document.getElementById('overlay-image');
+      const btn = document.getElementById('btn-diff-blend');
+
+      if (isDiffModeActive) {
+        img.style.mixBlendMode = "difference";
+        btn.classList.add('bg-rose-600', 'text-white');
+        updateOpacity(1.0);
+      } else {
+        img.style.mixBlendMode = "normal";
+        btn.classList.remove('bg-rose-600', 'text-white');
+        updateOpacity(savedFlickerOpacity || 0.5);
+      }
+
+      broadcastCurrentTransform();
+    }
+
+    // -------------------------------------------------------------
+    // GRAPHITE PROBE & PALETTE
+    // -------------------------------------------------------------
+    function setupGraphiteProbe() {
+      const canvas = document.getElementById('study-canvas');
+      const badge = document.getElementById('graphite-probe-badge');
+      const lumVal = document.getElementById('probe-lum-val');
+      const gradeVal = document.getElementById('probe-grade-val');
+      const colorPreview = document.getElementById('probe-color-preview');
+
+      canvas.addEventListener('mousemove', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        const x = Math.floor((e.clientX - rect.left) * scaleX);
+        const y = Math.floor((e.clientY - rect.top) * scaleY);
+
+        const ctx = canvas.getContext('2d');
+        try {
+          const pixel = ctx.getImageData(x, y, 1, 1).data;
+          const lum = Math.round(0.299 * pixel[0] + 0.587 * pixel[1] + 0.114 * pixel[2]);
+
+          badge.classList.remove('hidden');
+          badge.style.left = `${e.clientX + 14}px`;
+          badge.style.top = `${e.clientY + 14}px`;
+
+          lumVal.innerText = `${lum}/255`;
+          colorPreview.style.backgroundColor = `rgb(${pixel[0]}, ${pixel[1]}, ${pixel[2]})`;
+
+          let grade = "HB";
+          if (lum >= 225) grade = "4H / 2H (Highlight)";
+          else if (lum >= 185) grade = "H / F (Light Halftone)";
+          else if (lum >= 140) grade = "HB / B (Midtone)";
+          else if (lum >= 85) grade = "2B / 4B (Core Shadow)";
+          else if (lum >= 40) grade = "5B / 6B (Deep Shadow)";
+          else grade = "8B / Charcoal (Occlusion)";
+
+          gradeVal.innerText = grade;
+        } catch(err) {}
+      });
+
+      canvas.addEventListener('mouseleave', () => badge.classList.add('hidden'));
+
+      canvas.addEventListener('click', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const x = Math.floor((e.clientX - rect.left) * (canvas.width / rect.width));
+        const y = Math.floor((e.clientY - rect.top) * (canvas.height / rect.height));
+
+        const pixel = canvas.getContext('2d').getImageData(x, y, 1, 1).data;
+        isolatedValueTarget = Math.round(0.299 * pixel[0] + 0.587 * pixel[1] + 0.114 * pixel[2]);
+        document.getElementById('btn-reset-zone').classList.remove('hidden');
+        drawToCanvas();
+      });
+    }
+
+    function resetValueZoneIsolation() {
+      isolatedValueTarget = null;
+      document.getElementById('btn-reset-zone').classList.add('hidden');
+      drawToCanvas();
+    }
+
+    function extractColorPalette(imgObj) {
+      const paletteContainer = document.getElementById('inspector-palette');
+      paletteContainer.innerHTML = '';
+
+      const tempCanvas = document.createElement('canvas');
+      const tempCtx = tempCanvas.getContext('2d');
+      tempCanvas.width = 64; tempCanvas.height = 64;
+      tempCtx.drawImage(imgObj, 0, 0, 64, 64);
+      const data = tempCtx.getImageData(0, 0, 64, 64).data;
+
+      const swatches = [];
+      const step = Math.floor(data.length / (4 * 6)) || 1;
+      for (let j = 0; j < 6; j++) {
+        const idx = j * step * 4;
+        const hex = "#" + ((1 << 24) + (data[idx] << 16) + (data[idx + 1] << 8) + data[idx + 2]).toString(16).slice(1);
+        swatches.push(hex);
+      }
+
+      swatches.forEach(hex => {
+        const div = document.createElement('div');
+        div.className = "h-full rounded-md shadow cursor-pointer transition hover:scale-105 border border-white/20";
+        div.style.backgroundColor = hex;
+        div.title = `Hex: ${hex} (Click to copy)`;
+        div.onclick = () => navigator.clipboard.writeText(hex);
+        paletteContainer.appendChild(div);
+      });
+    }
+
+    function playAudioChime(freq = 587.33) {
+      try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.25);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.25);
+      } catch(e) {}
+    }
+
+    // -------------------------------------------------------------
+    // KEYSTONE DRAG EVENTS
+    // -------------------------------------------------------------
+    function toggleKeystoneMode() {
+      isKeystoneActive = !isKeystoneActive;
+      document.getElementById('keystone-btn').classList.toggle('bg-blue-600', isKeystoneActive);
+      document.getElementById('keystone-handles').classList.toggle('hidden', !isKeystoneActive);
+      if (isKeystoneActive) renderKeystonePins();
+    }
+
+    function renderKeystonePins() {
+      const stage = document.getElementById('phone-stage');
+      const w = stage.clientWidth, h = stage.clientHeight;
+      ['pin-tl', 'pin-tr', 'pin-br', 'pin-bl'].forEach((id, i) => {
+        const pin = document.getElementById(id);
+        pin.style.left = `${keystonePins[i].x * w}px`;
+        pin.style.top = `${keystonePins[i].y * h}px`;
+      });
+      applyKeystoneMatrix();
+    }
+
+    function setupKeystoneDragEvents() {
+      const stage = document.getElementById('phone-stage');
+      ['pin-tl', 'pin-tr', 'pin-br', 'pin-bl'].forEach((id, index) => {
+        const el = document.getElementById(id);
+        el.addEventListener('mousedown', (e) => { e.stopPropagation(); activeKeystonePin = index; });
+      });
+
+      document.getElementById('sight-p1').addEventListener('mousedown', e => { e.stopPropagation(); activeSightPin = 1; });
+      document.getElementById('sight-p2').addEventListener('mousedown', e => { e.stopPropagation(); activeSightPin = 2; });
+
+      window.addEventListener('mousemove', (e) => {
+        const rect = stage.getBoundingClientRect();
+        const x = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+        const y = Math.max(0, Math.min(1, (e.clientY - rect.top) / rect.height));
+
+        if (activeKeystonePin !== null && isKeystoneActive) {
+          keystonePins[activeKeystonePin] = { x, y };
+          renderKeystonePins();
+        } else if (activeSightPin !== null && isSightSizeActive) {
+          if (activeSightPin === 1) sightPin1 = { x, y };
+          else sightPin2 = { x, y };
+          updateSightPinsDOM();
+        }
+      });
+
+      window.addEventListener('mouseup', () => { activeKeystonePin = null; activeSightPin = null; });
+    }
+
+    function computeHomography(w, h, p) {
+      const pts = p.map(pt => ({ x: pt.x * w, y: pt.y * h }));
+      const dx1 = pts[1].x - pts[2].x, dx2 = pts[3].x - pts[2].x;
+      const dx3 = pts[0].x - pts[1].x + pts[2].x - pts[3].x;
+      const dy1 = pts[1].y - pts[2].y, dy2 = pts[3].y - pts[2].y;
+      const dy3 = pts[0].y - pts[1].y + pts[2].y - pts[3].y;
+      const det = dx1 * dy2 - dx2 * dy1;
+      const g = (dx3 * dy2 - dx2 * dy3) / det, i = (dx1 * dy3 - dx3 * dy1) / det;
+      const a = pts[1].x - pts[0].x + g * pts[1].x, b = pts[3].x - pts[0].x + i * pts[3].x, c = pts[0].x;
+      const d = pts[1].y - pts[0].y + g * pts[1].y, e = pts[3].y - pts[0].y + i * pts[3].y, f = pts[0].y;
+
+      return `matrix3d(${(a/w).toFixed(6)}, ${(d/w).toFixed(6)}, 0, ${(g/w).toFixed(6)}, ${(b/h).toFixed(6)}, ${(e/h).toFixed(6)}, 0, ${(i/h).toFixed(6)}, 0, 0, 1, 0, ${c.toFixed(6)}, ${f.toFixed(6)}, 0, 1)`;
+    }
+
+    function applyKeystoneMatrix() {
+      const stage = document.getElementById('phone-stage');
+      const matrixStr = computeHomography(stage.clientWidth, stage.clientHeight, keystonePins);
+      const container = document.getElementById('overlay-container');
+      container.style.transformOrigin = "0 0";
+      container.style.transform = matrixStr;
+
+      if (studioWs && studioWs.readyState === WebSocket.OPEN) {
+        studioWs.send(JSON.stringify({ action: 'SYNC_TRANSFORM', matrix3d: matrixStr, opacity: currentOpacity, contour: isTraceContourOnly }));
+      }
+    }
+
+    // -------------------------------------------------------------
+    // SEARCH & STUDIOS
+    // -------------------------------------------------------------
+    async function executeSearch(query) {
+      document.getElementById('results-count').innerText = "Searching visual archives...";
+      try {
+        const res = await fetch(`${API_BASE}/api/search?q=${encodeURIComponent(query)}`);
+        const data = await res.json();
+        activeReferences = data.results || [];
+        document.getElementById('results-count').innerText = `Showing ${activeReferences.length} visual references for "${query}"`;
+        renderGrid(activeReferences, 'reference-grid');
+      } catch (err) {}
+    }
+
+    async function executePinterestSearch(query) {
+      document.getElementById('pinterest-results-count').innerText = `Searching Pinterest boards for "${query}"...`;
+      try {
+        const res = await fetch(`${API_BASE}/api/pinterest?q=${encodeURIComponent(query)}`);
+        const data = await res.json();
+        renderGrid(data.results || [], 'pinterest-grid');
+        document.getElementById('pinterest-results-count').innerText = `Showing ${data.results?.length || 0} Pinterest pins for "${query}"`;
+      } catch (err) {}
+    }
+
+    function triggerPinterestSearch(val) {
+      document.getElementById('pinterest-input').value = val;
+      executePinterestSearch(val);
+    }
+
+    function selectAiStyle(btn, style) {
+      document.querySelectorAll('.ai-style-pill').forEach(b => b.className = "ai-style-pill py-2 px-3 rounded-lg bg-studio-800 border border-studio-700 text-slate-300 text-left hover:text-white");
+      btn.className = "ai-style-pill py-2 px-3 rounded-lg bg-amber-500/20 border border-amber-400 text-amber-200 font-semibold text-left";
+      selectedAiStyle = style;
+    }
+
+    async function generateAiReference() {
+      const prompt = document.getElementById('ai-prompt-input').value.trim();
+      if (!prompt) return;
+
+      const container = document.getElementById('ai-output-container');
+      const spinner = document.getElementById('ai-loading-spinner');
+      container.classList.remove('hidden'); spinner.classList.remove('hidden');
+
+      try {
+        const res = await fetch(`${API_BASE}/api/generate-ai?prompt=${encodeURIComponent(prompt)}&style=${encodeURIComponent(selectedAiStyle)}`);
+        const data = await res.json();
+        currentAiRefId = data.id; activeRefId = data.id;
+        const img = document.getElementById('ai-result-image');
+        img.src = data.imageUrl;
+        img.onload = () => {
+          spinner.classList.add('hidden');
+          document.getElementById('ai-result-title').innerText = data.title;
+          document.getElementById('ai-result-meta').innerText = `${data.lighting} • AI Synthesized`;
+          if (!activeReferences.some(r => r.id === data.id)) activeReferences.unshift(data);
+        };
+      } catch (err) { spinner.classList.add('hidden'); }
+    }
+
+    function handleImageError(imgEl, fallbackUrl) {
+      if (fallbackUrl && imgEl.src !== fallbackUrl) imgEl.src = fallbackUrl;
+      else imgEl.closest('.masonry-item')?.remove();
+    }
+
+    function renderGrid(items, targetContainerId) {
+      const grid = document.getElementById(targetContainerId);
+      grid.innerHTML = '';
+      if (!items || items.length === 0) {
+        grid.innerHTML = `<div class="col-span-full py-16 text-center text-slate-500 text-sm">No references found. Try another prompt!</div>`;
+        return;
+      }
+
+      items.forEach(item => {
+        if (!activeReferences.some(r => r.id === item.id)) activeReferences.push(item);
+        const isPin = item.category === "Pinterest Pin";
+        const isPinned = pinnedItems.some(p => p.id === item.id);
+        const card = document.createElement('div');
+        card.className = "masonry-item bg-studio-900 border border-studio-800 rounded-2xl overflow-hidden hover:border-slate-700 transition-all duration-200 hover:shadow-xl group mb-5 fade-in";
+        card.innerHTML = `
+          <div class="relative overflow-hidden cursor-pointer bg-studio-950 min-h-[160px]" onclick="openInspector('${item.id}')">
+            <img src="${item.thumbnailUrl || item.imageUrl}" alt="${item.title}" loading="lazy" referrerpolicy="no-referrer" onerror="handleImageError(this, '${item.imageUrl || ''}')" class="w-full object-cover group-hover:scale-105 transition-transform duration-300 rounded-t-2xl" />
+            <button onclick="event.stopPropagation(); pinReference(activeReferences.find(r => r.id === '${item.id}'))" class="absolute top-2.5 right-2.5 p-2 rounded-xl bg-studio-950/80 hover:bg-amber-500 hover:text-black border border-studio-700 text-amber-400 transition-all shadow-lg">
+              <i data-lucide="bookmark" class="w-3.5 h-3.5 ${isPinned ? 'fill-amber-400' : ''}"></i>
+            </button>
+          </div>
+          <div class="p-4 space-y-2">
+            <h3 class="text-sm font-bold text-slate-100 truncate">${item.title}</h3>
+            <div class="pt-2 flex items-center justify-between border-t border-studio-800/60">
+              <button onclick="openInspector('${item.id}')" class="text-xs text-slate-300 hover:text-white font-medium flex items-center space-x-1">
+                <i data-lucide="sliders" class="w-3.5 h-3.5 text-blue-400"></i><span>Study</span>
+              </button>
+              <button onclick="launchTracingStudioDirect('${item.id}')" class="text-xs px-2.5 py-1 rounded-lg ${isPin ? 'bg-pinterest/10 text-pinterest border border-pinterest/20' : 'bg-emerald-600/10 text-emerald-400 border border-emerald-500/20'} font-medium flex items-center space-x-1">
+                <i data-lucide="smartphone" class="w-3.5 h-3.5"></i><span>Trace on Phone</span>
+              </button>
+            </div>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+      lucide.createIcons();
+    }
+
+    function pinReference(item) {
+      if (item && !pinnedItems.some(p => p.id === item.id)) {
+        pinnedItems.push(item);
+        updatePinUI();
+      }
+    }
+
+    function unpinReference(id) {
+      pinnedItems = pinnedItems.filter(p => p.id !== id);
+      updatePinUI();
+    }
+
+    function clearPinboard() {
+      pinnedItems = [];
+      updatePinUI();
+    }
+
+    function togglePinboardDrawer() {
+      document.getElementById('pinboard-drawer').classList.toggle('translate-x-full');
+    }
+
+    function updatePinUI() {
+      document.getElementById('pin-badge').innerText = pinnedItems.length;
+      localStorage.setItem('sketchref_pins', JSON.stringify(pinnedItems));
+
+      const container = document.getElementById('pinboard-items');
+      container.innerHTML = '';
+      pinnedItems.forEach(item => {
+        const div = document.createElement('div');
+        div.className = "flex items-center space-x-3 bg-studio-950 p-2 rounded-xl border border-studio-800";
+        div.innerHTML = `
+          <img src="${item.thumbnailUrl || item.imageUrl}" class="w-12 h-12 object-cover rounded-lg">
+          <div class="flex-1 truncate"><h4 class="text-xs font-bold text-white truncate">${item.title}</h4></div>
+          <button onclick="swapActiveReference('${item.id}')" class="p-1.5 bg-blue-600 rounded-lg text-white"><i data-lucide="play" class="w-3.5 h-3.5"></i></button>
+          <button onclick="unpinReference('${item.id}')" class="p-1.5 text-slate-500 hover:text-rose-400"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+        `;
+        container.appendChild(div);
+      });
+
+      const dock = document.getElementById('dock-thumbnails');
+      dock.innerHTML = '';
+      pinnedItems.forEach(item => {
+        const thumb = document.createElement('img');
+        thumb.src = item.thumbnailUrl || item.imageUrl;
+        thumb.className = `w-10 h-10 object-cover rounded-lg cursor-pointer border-2 transition ${item.id === activeRefId ? 'border-amber-400 scale-105' : 'border-transparent opacity-75'}`;
+        thumb.onclick = () => swapActiveReference(item.id);
+        dock.appendChild(thumb);
+      });
+      lucide.createIcons();
+    }
+
+    function swapActiveReference(refId) {
+      const item = activeReferences.find(r => r.id === refId) || pinnedItems.find(r => r.id === refId);
+      if (!item) return;
+
+      activeRefId = item.id;
+      document.getElementById('overlay-image').src = item.thumbnailUrl || item.imageUrl;
+      if (studioWs && studioWs.readyState === WebSocket.OPEN) {
+        studioWs.send(JSON.stringify({ action: 'SWAP_REFERENCE', refId: item.id, imageUrl: item.thumbnailUrl || item.imageUrl }));
+      }
+      updatePinUI();
+    }
+
+    function openInspector(id) {
+      const item = activeReferences.find(r => r.id === id);
+      if (!item) return;
+      currentInspectorItem = item;
+      activeRefId = item.id;
+
+      document.getElementById('inspector-title').innerText = item.title;
+      document.getElementById('inspector-meta').innerText = `${item.category} • ${item.lighting} • ${item.angle}`;
+      document.getElementById('inspector-modal').classList.remove('hidden');
+
+      isGrayscale = false; isSobel = false; isMirrored = false; posterizeSteps = 0; texturePurgeLevel = 0;
+      isRelightingEnabled = false; isolatedValueTarget = null;
+      document.getElementById('relight-toggle').checked = false;
+      document.getElementById('relight-controls').classList.add('hidden');
+      document.getElementById('btn-reset-zone').classList.add('hidden');
+
+      originalImageObj = new Image();
+      originalImageObj.crossOrigin = "anonymous";
+      originalImageObj.referrerPolicy = "no-referrer";
+      originalImageObj.src = item.thumbnailUrl || item.imageUrl;
+      originalImageObj.onload = () => {
+        drawToCanvas();
+        extractColorPalette(originalImageObj);
+      };
+    }
+
+    function closeInspector() {
+      document.getElementById('inspector-modal').classList.add('hidden');
+    }
+
+    function launchTracingStudioDirect(id) {
+      closeInspector();
+      const item = activeReferences.find(r => r.id === id) || pinnedItems.find(r => r.id === id) || activeReferences[0];
+      if (!item) return;
+
+      activeRefId = item.id;
+      document.getElementById('overlay-image').src = item.thumbnailUrl || item.imageUrl;
+      document.getElementById('tracing-studio').classList.remove('hidden');
+      isTracingActive = true;
+      resetOverlayTransform();
+
+      const qrBox = document.getElementById('in-studio-qrcode');
+      qrBox.innerHTML = '';
+      const phoneUrl = `${window.location.origin}/mobile?id=${item.id}`;
+      document.getElementById('in-studio-link-text').innerText = phoneUrl;
+
+      new QRCode(qrBox, { text: phoneUrl, width: 170, height: 170, colorDark: "#020617", colorLight: "#ffffff" });
+      document.getElementById('floating-qr-card').classList.remove('hidden');
+      connectStudioWebSocket(item.id);
+      updatePinUI();
+    }
+
+    function toggleQrCard() {
+      document.getElementById('floating-qr-card').classList.toggle('hidden');
+    }
+
+    function closeTracingStudio() {
+      document.getElementById('tracing-studio').classList.add('hidden');
+      isTracingActive = false;
+      if (isTimelapseRecording) toggleTimelapseRecording();
+      if (isMemoryTrainerActive) toggleMuscleMemoryTrainer();
+      if (studioWs) { studioWs.close(); studioWs = null; }
+    }
+
+    function rotateOverlayStep() {
+      traceTransform.rotation = (traceTransform.rotation + 90) % 360;
+      applyTransform();
+      broadcastCurrentTransform();
+    }
+
+    function undoTransform() {
+      if (transformHistory.length > 0) {
+        traceTransform = transformHistory.pop();
+        applyTransform();
+        broadcastCurrentTransform();
+      }
+    }
+
+    function updateOpacity(val) {
+      currentOpacity = parseFloat(val);
+      document.getElementById('overlay-image').style.opacity = currentOpacity;
+      document.getElementById('opacity-val').innerText = `${Math.round(currentOpacity * 100)}%`;
+      document.getElementById('opacity-slider').value = currentOpacity;
+      broadcastCurrentTransform();
+    }
+
+    function toggleTraceContourMode() {
+      isTraceContourOnly = !isTraceContourOnly;
+      document.getElementById('overlay-image').style.filter = isTraceContourOnly ? "grayscale(100%) contrast(300%) invert(100%)" : "none";
+      document.getElementById('trace-contour-btn').classList.toggle('bg-amber-600', isTraceContourOnly);
+      broadcastCurrentTransform();
+    }
+
+    function flipTraceOverlay() {
+      isTraceMirrored = !isTraceMirrored;
+      applyTransform();
+      broadcastCurrentTransform();
+    }
+
+    function resetOverlayTransform() {
+      traceTransform = { x: 0, y: 0, scale: 1, rotation: 0 };
+      isTraceMirrored = false; isKeystoneActive = false; isDiffModeActive = false;
+      document.getElementById('keystone-btn').classList.remove('bg-blue-600', 'text-white');
+      document.getElementById('keystone-handles').classList.add('hidden');
+      document.getElementById('overlay-image').style.mixBlendMode = "normal";
+      applyTransform();
+      broadcastCurrentTransform();
+    }
+
+    function applyTransform() {
+      const container = document.getElementById('overlay-container');
+      const mirror = isTraceMirrored ? -1 : 1;
+      container.style.transformOrigin = "center center";
+      container.style.transform = `translate(${traceTransform.x}px, ${traceTransform.y}px) scale(${traceTransform.scale * mirror}, ${traceTransform.scale}) rotate(${traceTransform.rotation}deg)`;
+    }
+
+    function toggleCanvasLock() {
+      isCanvasLocked = !isCanvasLocked;
+      document.getElementById('canvas-lock-btn').classList.toggle('bg-amber-600', isCanvasLocked);
+      document.getElementById('lock-badge').classList.toggle('hidden', !isCanvasLocked);
+    }
+
+    function setupTracingGestures() {
+      const stage = document.getElementById('phone-stage');
+      stage.addEventListener('mousedown', (e) => {
+        if (isCanvasLocked || isKeystoneActive || isSightSizeActive) return;
+        transformHistory.push({ ...traceTransform });
+        isDragging = true;
+        dragStart = { x: e.clientX - traceTransform.x, y: e.clientY - traceTransform.y };
+      });
+
+      window.addEventListener('mousemove', (e) => {
+        if (!isDragging || isCanvasLocked || isKeystoneActive || isSightSizeActive) return;
+        traceTransform.x = e.clientX - dragStart.x;
+        traceTransform.y = e.clientY - dragStart.y;
+        applyTransform();
+        broadcastCurrentTransform();
+      });
+
+      window.addEventListener('mouseup', () => { isDragging = false; });
+
+      stage.addEventListener('wheel', (e) => {
+        if (isCanvasLocked || isKeystoneActive || isSightSizeActive) return;
+        e.preventDefault();
+        traceTransform.scale = Math.min(Math.max(0.1, traceTransform.scale + e.deltaY * -0.0015), 5.0);
+        applyTransform();
+        broadcastCurrentTransform();
+      }, { passive: false });
+    }
+
+    document.getElementById('search-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      executeSearch(document.getElementById('search-input').value.trim());
+    });
+
+    document.getElementById('pinterest-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      executePinterestSearch(document.getElementById('pinterest-input').value.trim());
+    });
+
+    window.addEventListener('keydown', (e) => {
+      if (e.code === "Tab" && isTracingActive) { e.preventDefault(); toggleFlickerStrobe(); }
+      if (e.code === "Space" && isTracingActive) { e.preventDefault(); toggleCanvasLock(); }
+      if (e.code === "KeyZ" && (e.ctrlKey || e.metaKey) && isTracingActive) { e.preventDefault(); undoTransform(); }
+      if (e.code === "Escape") { closeInspector(); closeTracingStudio(); }
+    });
+
+    window.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+      setupTracingGestures();
+      setupKeystoneDragEvents();
+      setupDragAndDropIngestion();
+      setupGraphiteProbe();
+      setupLightOrbGesture();
+      updatePinUI();
+      executeSearch("batman sketch");
+    });
+  </script>
+</body>
+</html>
