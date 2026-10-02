@@ -1,34 +1,45 @@
 <?xml version="1.0" encoding="utf-8"?>
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="108dp"
-    android:height="108dp"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="512dp"
+    android:height="512dp"
     android:viewportWidth="512"
     android:viewportHeight="512">
 
-    <!-- Scaled safely to fit inside Android adaptive icon masks -->
+    <!-- Squircle Gradient Background -->
+    <path android:pathData="M136,16 L376,16 A120,120 0 0,1 496,136 L496,376 A120,120 0 0,1 376,496 L136,496 A120,120 0 0,1 16,376 L16,136 A120,120 0 0,1 136,16 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:startX="0"
+                android:startY="0"
+                android:endX="512"
+                android:endY="512"
+                android:type="linear">
+                <item android:color="#4F46E5" android:offset="0.0" />
+                <item android:color="#3B82F6" android:offset="0.5" />
+                <item android:color="#1D4ED8" android:offset="1.0" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- Pointed Brush Glyph -->
     <group
         android:pivotX="256"
         android:pivotY="256"
-        android:scaleX="0.82"
-        android:scaleY="0.82"
         android:rotation="-45">
 
-        <!-- Handle -->
         <path
             android:fillColor="#FFFFFFFF"
             android:pathData="M244,88 C244,76 268,76 268,88 L273,250 L239,250 Z" />
 
-        <!-- Metal Ferrule Ring -->
         <path
             android:fillColor="#FFFFFFFF"
             android:pathData="M237,256 L275,256 A7,7 0 0,1 282,263 L282,273 A7,7 0 0,1 275,280 L237,280 A7,7 0 0,1 230,273 L230,263 A7,7 0 0,1 237,256 Z" />
 
-        <!-- Pointed Brush Tip -->
         <path
             android:fillColor="#FFFFFFFF"
             android:pathData="M235,284 C220,314 218,348 232,382 C242,406 253,422 256,428 C259,422 270,406 280,382 C294,348 292,314 277,284 Z" />
 
-        <!-- Blue Core Bristle Highlight -->
         <path
             android:strokeColor="#FF3B82F6"
             android:strokeWidth="6"
